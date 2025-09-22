@@ -1,0 +1,23 @@
+---
+import { Effect } from "effect";
+
+import { Git, runWithAstro } from "~/services/Git";
+
+/* Init */
+interface Props {
+  repository: string;
+  blob: string;
+}
+
+const { repository, blob } = Astro.props;
+
+const git = Effect.serviceMembers(Git);
+
+/* Data */
+const content = await git.functions
+  .getBlob(repository, blob)
+  .pipe(runWithAstro);
+---
+
+<pre
+  class="text-[0.9rem] p-2 w-full overflow-x-scroll"><code set:text={content} /></pre>

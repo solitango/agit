@@ -1,0 +1,73 @@
+---
+import { Effect, Schema, Match } from "effect";
+
+import { Git, runWithAstro } from "~/services/Git";
+import { Path } from "~/schema/Path";
+import { TreeObject } from "~/schema/Tree";
+
+/* Init */
+interface Props {
+  repository: string;
+  commit: string;
+  path: readonly string[];
+}
+
+const { repository, commit, path } = Astro.props;
+
+const git = Effect.serviceMembers(Git);
+
+/* Data */
+const tree = await git.functions
+  .getTree(repository, commit, path)
+  .pipe(runWithAstro);
+
+/* Helpers */
+const getBasename = (treeObject: Schema.Schema.Type<typeof TreeObject>) =>
+  Schema.encodeSync(Path)(treeObject.path.slice(-1));
+---
+
+<table class="w-full">
+  <thead class="border-b-1 border-b-stone-400">
+    <tr>
+      <th
+        class="pl-1 pr-4 py-0.5 text-left border-dashed border-r-1 border-r-stone-400"
+        >Mode</th
+      >
+      <th class="pl-1 pr-4 py-0.5 text-left">Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      tree.map((treeObject) => (
+        <tr>
+          <td class="pl-1 pr-4 py-0.5 border-dashed border-r-1 border-r-stone-400">
+            {treeObject.mode}
+          </td>
+          <td class="pl-1 pr-4 py-0.5">
+            {Match.value(treeObject).pipe(
+              Match.when({ type: "blob" }, (treeObject) => (
+                <a
+                  class="underline"
+                  href={`/repository/${repository}/blob/${treeObject.object}?callbackCommit=${commit}`}
+                >
+                  {getBasename(treeObject)}
+                </a>
+              )),
+
+              Match.when({ type: "tree" }, (treeObject) => (
+                <a
+                  class="underline"
+                  href={`/repository/${repository}/commit/${commit}/tree/${treeObject.path}`}
+                >
+                  {getBasename(treeObject)}
+                </a>
+              )),
+
+              Match.orElse(getBasename),
+            )}
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

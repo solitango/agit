@@ -1,0 +1,43 @@
+---
+import { Effect } from "effect";
+
+import Page from "~/components/Page.astro";
+import Navigation from "~/components/Navigation.astro";
+import Info_ from "~/components/Info.astro"; // fix linting
+import { Git, runWithAstro } from "~/services/Git";
+
+/* Init */
+const { repository, commit } = Astro.params;
+
+const git = Effect.serviceMembers(Git);
+
+/* Guard */
+if (!repository || !commit) {
+  return new Response(null, {
+    status: 404,
+  });
+}
+
+try {
+  await git.functions.accessRepository(repository).pipe(runWithAstro);
+} catch {
+  return new Response(null, {
+    status: 404,
+  });
+}
+
+/* Data */
+const description = await git.functions
+  .getRepositoryDescription(repository)
+  .pipe(runWithAstro);
+---
+
+<Page title={repository} description={description}>
+  <main class="mt-8 flex flex-col">
+    <Navigation repository={repository} currentCommit={commit} active="Info" />
+
+    <div class="border-1 border-stone-400">
+      <Info_ repository={repository} commit={commit} />
+    </div>
+  </main>
+</Page>

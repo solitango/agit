@@ -1,0 +1,83 @@
+---
+import { Effect, Schema, Either, pipe } from "effect";
+
+import Page from "~/components/Page.astro";
+import Navigation from "~/components/Navigation.astro";
+import Commit from "~/components/Commits.astro";
+import { Git, runWithAstro } from "~/services/Git";
+import { Hash } from "~/schema/Hash";
+
+/* Init */
+const factor = 10;
+
+const { repository } = Astro.params;
+
+const callbackCommit = pipe(
+  Astro.url.searchParams.get("callbackCommit"),
+  Schema.decodeUnknownEither(Hash),
+  Either.getOrElse(() => "HEAD"),
+);
+
+const unsafePage = parseInt(Astro.url.searchParams.get("page") || "0");
+const page = isNaN(unsafePage) || 0 > unsafePage ? 0 : unsafePage;
+
+const git = Effect.serviceMembers(Git);
+
+/* Guard */
+if (!repository) {
+  return new Response(null, {
+    status: 404,
+  });
+}
+
+try {
+  await git.functions.accessRepository(repository).pipe(runWithAstro);
+} catch {
+  return new Response(null, {
+    status: 404,
+  });
+}
+
+/* Data */
+const description = await git.functions
+  .getRepositoryDescription(repository)
+  .pipe(runWithAstro);
+
+const commitAmount = await git.functions
+  .countCommits(repository)
+  .pipe(runWithAstro);
+
+const maxPage = Math.ceil(commitAmount / factor);
+---
+
+<Page title={repository} description={description}>
+  <main class="mt-8 flex flex-col">
+    <Navigation
+      repository={repository}
+      currentCommit={callbackCommit}
+      active="Commit"
+    />
+
+    <div class="border-1 border-stone-400">
+      <Commit
+        repository={repository}
+        maxAmount={factor}
+        offset={page * factor}
+      />
+    </div>
+
+    <div class="mt-2 flex flex-row gap-8 justify-center">
+      <a
+        class="italic"
+        href={`/repository/${repository}/commits?page=${Math.max(0, page - 1)}`}
+        >Prev</a
+      >
+      <span>{`${page + 1}/${maxPage}`}</span>
+      <a
+        class="italic"
+        href={`/repository/${repository}/commits?page=${Math.min(maxPage - 1, page + 1)}`}
+        >Next</a
+      >
+    </div>
+  </main>
+</Page>

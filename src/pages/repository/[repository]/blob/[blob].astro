@@ -1,0 +1,54 @@
+---
+import { Effect, Schema, Either, pipe } from "effect";
+
+import Page from "~/components/Page.astro";
+import Navigation from "~/components/Navigation.astro";
+import Blob_ from "~/components/Blob.astro"; // fix linting
+import { Git, runWithAstro } from "~/services/Git";
+import { Hash } from "~/schema/Hash";
+
+/* Init */
+const { repository, blob } = Astro.params;
+
+const callbackCommit = pipe(
+  Astro.url.searchParams.get("callbackCommit"),
+  Schema.decodeUnknownEither(Hash),
+  Either.getOrElse(() => "HEAD"),
+);
+
+const git = Effect.serviceMembers(Git);
+
+/* Guard */
+if (!repository || !blob) {
+  return new Response(null, {
+    status: 404,
+  });
+}
+
+try {
+  await git.functions.accessRepository(repository).pipe(runWithAstro);
+} catch {
+  return new Response(null, {
+    status: 404,
+  });
+}
+
+/* Data */
+const description = await git.functions
+  .getRepositoryDescription(repository)
+  .pipe(runWithAstro);
+---
+
+<Page title={repository} description={description}>
+  <main class="mt-8 flex flex-col">
+    <Navigation
+      repository={repository}
+      currentCommit={callbackCommit}
+      active="Blob"
+    />
+
+    <div class="border-1 border-stone-400">
+      <Blob_ repository={repository} blob={blob} />
+    </div>
+  </main>
+</Page>

@@ -1,0 +1,45 @@
+---
+import { Effect, Schema } from "effect";
+
+import Page from "~/components/Page.astro";
+import Navigation from "~/components/Navigation.astro";
+import Tree from "~/components/Tree.astro";
+import { Path } from "~/schema/Path";
+import { Git, runWithAstro } from "~/services/Git";
+
+/* Init */
+const { repository, commit, path = "" } = Astro.params;
+const pathDecoded = Schema.decodeSync(Path)(path);
+
+const git = Effect.serviceMembers(Git);
+
+/* Guards */
+if (!repository || !commit) {
+  return new Response(null, {
+    status: 404,
+  });
+}
+
+try {
+  await git.functions.accessRepository(repository).pipe(runWithAstro);
+} catch {
+  return new Response(null, {
+    status: 404,
+  });
+}
+
+/* Data */
+const description = await git.functions
+  .getRepositoryDescription(repository)
+  .pipe(runWithAstro);
+---
+
+<Page title={repository} description={description}>
+  <main class="mt-8 flex flex-col">
+    <Navigation repository={repository} currentCommit={commit} active="Tree" />
+
+    <div class="border-1 border-stone-400">
+      <Tree repository={repository} commit={commit} path={pathDecoded} />
+    </div>
+  </main>
+</Page>

@@ -1,0 +1,83 @@
+---
+import { Effect, DateTime, Duration } from "effect";
+
+import { Git, runWithAstro } from "~/services/Git";
+
+/* Init */
+interface Props {
+  repository: string;
+  maxAmount: number;
+  offset: number;
+}
+
+const { repository, maxAmount, offset } = Astro.props;
+
+const git = Effect.serviceMembers(Git);
+
+/* Data */
+const commits = await git.functions
+  .getCommits(repository, maxAmount, offset)
+  .pipe(runWithAstro);
+
+/* Helpers */
+const calculateAge = (time: DateTime.DateTime) =>
+  DateTime.now.pipe(
+    Effect.map(DateTime.distanceDuration(time)),
+    Effect.map((duration) => {
+      const minutes = duration.pipe(Duration.toMinutes, Math.ceil);
+      const hours = duration.pipe(Duration.toHours, Math.ceil);
+      const days = duration.pipe(Duration.toDays, Math.ceil);
+
+      if (days >= 7) {
+        return time.pipe(DateTime.toDate).toLocaleDateString("nu");
+      }
+
+      if (hours >= 24) {
+        return `${days.toString()} day${days == 1 ? "" : "s"}`;
+      }
+
+      if (minutes >= 60) {
+        return `${hours.toString()} hour${hours == 1 ? "" : "s"}`;
+      }
+
+      return `${minutes.toString()} minute${minutes == 1 ? "" : "s"}`;
+    }),
+  );
+---
+
+<table class="w-full">
+  <thead class="border-b-1 border-b-stone-400">
+    <tr>
+      <th
+        class="pl-2 pr-4 py-0.5 text-left border-dashed border-r-1 border-r-stone-400"
+        >Age</th
+      >
+      <th class="pl-1 pr-4 py-0.5 text-left">Subject</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      commits.map((commit) => (
+        <tr>
+          <td class="pl-1 pr-4 py-0.5 border-dashed border-r-1 border-r-stone-400">
+            {calculateAge(commit.date).pipe(Effect.runSync)}
+          </td>
+          <td class="pl-1 pr-4 py-0.5">
+            <a
+              class="underline"
+              href={`/repository/${repository}/commit/${commit.hash}/info`}
+            >
+              {commit.subject}
+            </a>
+
+            {commit.decorations.map((decoration) => (
+              <span class="italic px-1 ml-2 border-1 border-stone-400 whitespace-pre">
+                {decoration.label}
+              </span>
+            ))}
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

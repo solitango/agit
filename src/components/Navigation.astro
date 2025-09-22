@@ -1,0 +1,39 @@
+---
+/* Init */
+type Tab = "Info" | "Tree" | "Diff" | "Blob" | "Commit";
+
+interface Props {
+  repository: string;
+  currentCommit: string;
+  active: Tab;
+}
+
+const { repository, currentCommit, active } = Astro.props;
+
+/* Helpers */
+const makeActiveClasses = (tab: Tab) =>
+  active == tab ? "bg-stone-800! text-stone-100!" : "";
+---
+
+<ul class="px-1 flex flex-row gap-1 whitespace-nowrap overflow-x-scroll">
+  <li class={`px-2 italic ${makeActiveClasses("Info")}`}>
+    <a href={`/repository/${repository}/commit/${currentCommit}/info`}>Info</a>
+  </li>
+
+  <li class={`px-2 italic ${makeActiveClasses("Tree")}`}>
+    <a href={`/repository/${repository}/commit/${currentCommit}/tree`}>Tree</a>
+  </li>
+
+  <li class={`px-2 italic ${makeActiveClasses("Diff")}`}>
+    <a href={`/repository/${repository}/commit/${currentCommit}/diff`}>Diff</a>
+  </li>
+
+  <li class={`px-2 ${makeActiveClasses("Blob")}`}>Blob</li>
+
+  <li class={`px-2 ml-auto order-last italic ${makeActiveClasses("Commit")}`}>
+    <a
+      href={`/repository/${repository}/commits?callbackCommit=${currentCommit}`}
+      >{`Commit: ${currentCommit}`}</a
+    >
+  </li>
+</ul>
