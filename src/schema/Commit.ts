@@ -25,8 +25,6 @@ export const Commit = Schema.transformOrFail(
         );
       }
 
-      console.log(input);
-
       return ParseResult.succeed({
         hash: input[0],
         date: parseInt(input[1]) * 1000,
