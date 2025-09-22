@@ -4,6 +4,17 @@ agit is a simple web frontend for git repositories inspired by [cgit](https://gi
 
 agit is just a weekend project I found I didn't need it after that weekend. I just publish it for anyone who want to build something like cgit in TypeScript.
 
+## Usage
+
+```bash
+# build
+pnpm run build
+
+# run
+export AGIT_REPOSITORY_STORAGE=/srv/git # or wherever you want
+node dist/server/entry.mjs
+```
+
 ## Aims
 
 agit focuses on providing:
