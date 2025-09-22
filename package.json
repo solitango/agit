@@ -10,13 +10,11 @@
   },
   "dependencies": {
     "@astrojs/node": "^9.4.3",
-    "@astrojs/solid-js": "^5.1.1",
     "@effect/platform": "^0.90.9",
     "@effect/platform-node": "^0.96.1",
     "@tailwindcss/vite": "^4.1.13",
     "astro": "^5.13.7",
     "effect": "^3.17.13",
-    "solid-js": "^1.9.9",
     "tailwindcss": "^4.1.13"
   },
   "devDependencies": {

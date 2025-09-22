@@ -4,8 +4,6 @@ import node from "@astrojs/node";
 
 import tailwindcss from "@tailwindcss/vite";
 
-import solidJs from "@astrojs/solid-js";
-
 // https://astro.build/config
 export default defineConfig({
   output: "server",
@@ -26,6 +24,4 @@ export default defineConfig({
   adapter: node({
     mode: "standalone",
   }),
-
-  integrations: [solidJs()],
 });
